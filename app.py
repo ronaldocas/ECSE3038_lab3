@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-#app.config["MONGO_URI"] = "mongodb+srv://week3:J9eEhmeSISjZIvqw@cluster0.enls6.mongodb.net/fruit_basket?retryWrites=true&w=majority"
 app.config["MONGO_URI"] = os.getenv("MONGO_CONNECTION_STRING")
 mongo = PyMongo(app) 
 # datetime object containing current date and time
