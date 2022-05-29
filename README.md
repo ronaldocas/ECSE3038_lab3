@@ -1,159 +1,54 @@
-# ECSE3038_lab3
-This API was done as a university lab at the university of the west indies mona faculty of engineering
-The api is programmed to allow a user to input profile data and tank data
-HTTP Requests such as patch, get, post and delete are used along with a PYMONGO data base to manipulate information on the tanks 
-A fake database was used for profile information 
-
-OUTLINE OF LAB SHOWN BELOW:
-Please read the entire document before submitting your repo.
-
 ## Aim
 
-This lap is meant to get students more accustomed to the technologies used in designing and implementing a RESTful API server.
+This lab is meant to get students more accustomed to the technologies used in designing and implementing a WiFi enabled embedded dev module as part of an IoT system and RESTful API server.
 
 ## Requirements
 
-The specifications have shifted slightly since the last developer meeting. Your client's budget recently increased and now they're able to pay for a database service. You've done your research and found that MongoDB is the most suitable database platform for the project. With this new information, the client has asked that you modify the API server to store all `Tank` related data to be stored in the database. The `Profile` data can be handled the same way as it was originally implemented, where the profile data is saved in a variable on the server. If you want to modify the `Profile` routes to save the data in the database as well, you may, but you don't have to (you won't get extra marks if you do and you won't lose marks if you don't).
+### Client
 
-You'll need to sign up on the MongoDB website, create a project and add a cluster to your project.
+For the final part of the system you're meant to build, you'll have to send status updates from each deployed tank. Your goal is to design a circuit based on an Espressif based development module (eg. ESP8266, ESP32, etc.).
 
-The following routes should be modified to support the use of the mongodb database.
+Your embedded system should continuously send POST requests to your server from the embedded circuit. 
 
-```jsx
-GET /data
-POST /data
-PATCH /data/:id
-DELETE /data/:id
-```
+Your POST request should send a JSON object as payload.
 
-**GET /data**
+Your JSON body should formatted as follows:
 
-As previously implemented, when this route is requested, the server should respond with an array of zero or more tank objects.
-
-When there are no tanks in the db:
-
-```jsx
-GET /data
-
-Expected Response
-[]
-```
-
-When the table used to store tank data is populated:
-
-```jsx
-GET /data
-
-Expected Response
-[
-    {
-        "_id": {
-            "$oid": "602bd7955b1c30eb21b821c5"
-        },
-        "location": "Nardo's",
-        "lat": "18.00481892242301",
-        "long": "-76.74592179547767",
-        "percentatge_full": 100,
-    },
-		.
-		.
-		.
-]
-```
-
-**POST /data**
-
-Just as previously implemented, the server should be able to handle a POST request that consumes a JSON body, validates it against schema and returns the saved document.
-
-**The server should respond an appropriate error message and error code when JSON body sent to the server is malformed.**
-
-```jsx
-POST /data
-
-Example Request
+```json
 {
-    "location": "Physics department",
-    "lat": "18.004741066082236",
-    "long": "-76.74875280426826",
-    "percentage_full": 56
-}
+	"tank_id": <id>, 
+	"water_level": <water level>
+} 
+```
 
-Expected Response
+Since we currently don't all have the hardware required to measure the volume or height of water or water level in the tank, we'll have to simulate the response using other hardware if necessary. 
+
+In your arduino sketch, include a function called `getWaterLevel`. This function should return an integer value read from a sensor of your choosing. This function should be used to read the value from an ultrasonic sensor, ideally, or if one is not available, a digital/analog temperature sensor or any other hardware component capable of outputting a varying signal readable by the ESP dev module.
+
+This function should be used to populate the `water_level` attribute of your request's JSON body. 
+
+With this design, you'll have to programmatically construct the JSON body using an appropriate JSON library.
+
+The `tank_id` attribute of the JSON body should be populated with the MAC address of the dev module. This can be pulled programmatically and saved locally in your adruino sketch.
+
+### Server
+
+You'll have to add a new route handler to your API. The route handler function should accept a POST request on the path "/tank": `POST /tank`.
+
+The response of this API call should be a JSON with a suitable success message, the time of the response and a boolean value that should be set to `true` if the posted `water_level` was between 80 and 100, inclusively, and `false` otherwise, eg:
+
+```json
 {
-		"_id": {
-        "$oid": "6c3055b121bd79821ceb02b6"
-    },
-    "location": "Physics department",
-    "lat": "18.004741066082236",
-    "long": "-76.74875280426826",
-    "percentage_full": 56
+	"led": true,
+	"msg": "data saved in database successfully",
+	"date": "<datetime of respsonse>",
 }
 ```
 
-**PATCH /data/:id**
+### Embedded Design
 
-As previously implemented, your server should allow a user to alter the parts of one of the tanks after it has been posted. The server should allow the requester to make a JSON body with any combination of the four attributes and update them as necessary (The requester should NOT be allowed to edit the `id` attribute). The server should respond with the edited document.
+The `led` attribute in the JSON response should be used to control the state of an LED connected to your ESP32. If `led` is `true`, the led should light. The led should be off otherwise.
 
-**The server should respond with an appropriate error message and error code when the JSON body sent to the server is malformed.**
+### Database
 
-```jsx
-PATCH /data/:id
-
-Example Request
-{
-    "location": "<new location>", //optional
-    "lat": "<new lat>", //optional
-    "long": "<new long>", //optional
-    "percentage_full": "<new percentage_full>" //optional
-}
-
-Expected Response
-{
-		"_id": {
-        "$oid": "<id>"
-    },
-    "location": "<updated location>",
-    "lat": "<updated lat>",
-    "long": "<updated long>",
-    "percentage_full": "<updated percentage_full>"
-}
-```
-
-**DELETE /data/:id**
-
-Your server should allow the requester to delete any previously POSTed object.
-
-**The server should respond an appropriate error message and error code when the input ID of the required tank object does not exist.**
-
-```jsx
-DELETE /data/:id
-
-Expected Response
-{
-    "success": true
-}
-```
-
-## Submission
-
-Your code should be uploaded to your GitHub account.
-
-The repo should be called "ECSE3038_lab3".
-
-**Your main python script must be called app.py.**
-
-**The application must be hosted on all IP address of the server.**
-
-**The application must listen for incoming request on port 3000.**
-
-You should include a .gitignore file that omits any file that isn’t the [app.py](http://app.py) and requirements.txt.
-
-You should include a [README.md](http://readme.md/) file that describes the purpose and operation of your API.
-
-Python repos should also contain a requirements.txt file with a list of all the packages used in the project.
-
-Due date is Sunday, February 13, 2022 at 11:59PM.
-
-You're only required to provide a link to your GitHub repository.
-
-Any commits made to the repo after the due date will not be considered.
+You'll also need to add a new marshmallow schema to your application. This would also mean that a new collection will be added to the database that you're application communicates with.  The schema should be called `Level` and a level should consist of a `tank_id` and a `percentage_full`. These two values should be written to the `levels` collection.
